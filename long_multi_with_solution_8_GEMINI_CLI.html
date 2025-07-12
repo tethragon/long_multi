@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Εξάσκηση στον Πολλαπλασιασμό (Ευρωπαϊκή Μέθοδος)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .problem-grid {
+            display: grid;
+            justify-content: end;
+            align-items: center;
+            font-family: monospace;
+            font-size: 1.5rem;
+            line-height: 2rem;
+            direction: ltr;
+            position: relative;
+        }
+        .problem-grid input {
+            width: 1.5rem;
+            height: 2rem;
+            text-align: center;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            background-color: #f9fafb;
+            caret-color: auto;
+            font-size: 1.5rem;
+            padding: 0;
+            margin: 0 1px;
+        }
+        .problem-grid input:focus {
+            outline: 2px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+        .problem-grid .carry-input {
+            width: 1rem;
+            height: 1.25rem;
+            font-size: 0.875rem;
+            border-color: transparent;
+            background-color: transparent;
+            color: #ef4444;
+            margin: 0 0.25rem;
+            position: relative;
+            top: -0.5rem;
+            caret-color: auto;
+        }
+        .problem-grid .empty {
+            width: 1.5rem;
+        }
+        .problem-grid .operator {
+            padding-right: 0.5rem;
+            user-select: none;
+            font-weight: 700;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .problem-line {
+            border-bottom: 2px solid #111827;
+            grid-column: 1 / -1;
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .correct {
+            background-color: #dcfce7 !important;
+            border-color: #22c55e !important;
+        }
+        .incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+        .final-comma, .number-comma {
+            position: absolute;
+            font-weight: 700;
+            color: #374151;
+            user-select: none;
+            font-size: 1.5rem;
+            line-height: 2.5rem;
+            pointer-events: none;
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-2xl mx-auto p-4 md:p-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <header class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Πολλαπλασιασμός</h1>
+                <p class="text-gray-500 mt-1">Εξάσκηση στην Ευρωπαϊκή Μέθοδο</p>
+            </header>
+
+            <!-- Number Input Section -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+                <input 
+                type="text" 
+                id="num1" 
+                inputmode="decimal" 
+                pattern="[0-9]*[.,]?[0-9]*" 
+                class="w-full sm:w-40 px-4 py-2 border border-gray-300 rounded-lg text-center text-lg focus:ring-2 focus:ring-blue-500" 
+                placeholder="Πολλαπλασιαστέος" 
+                aria-label="Πολλαπλασιαστέος αριθμός"
+                autocomplete="off"
+                >
+                <span class="text-2xl font-bold text-gray-500" aria-hidden="true">×</span>
+                <input 
+                type="text" 
+                id="num2" 
+                inputmode="decimal" 
+                pattern="[0-9]*[.,]?[0-9]*" 
+                class="w-full sm:w-40 px-4 py-2 border border-gray-300 rounded-lg text-center text-lg focus:ring-2 focus:ring-blue-500" 
+                placeholder="Πολλαπλασιαστής" 
+                aria-label="Πολλαπλασιαστής αριθμός"
+                autocomplete="off"
+                >
+            </div>
+            <div class="flex flex-col sm:flex-row items-start justify-center gap-4 mb-8">
+                <button id="generateProblem" class="w-full sm:w-auto bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow" aria-label="Ξεκίνα με αυτούς τους αριθμούς">Ξεκίνα με αυτούς τους αριθμούς</button>
+
+                <!-- Container for Random button and its dropdown -->
+                <div class="flex flex-col items-center w-full sm:w-auto gap-2">
+                    <button id="randomProblem" class="w-full bg-gray-200 text-gray-800 font-semibold px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors" aria-label="Τυχαίο Πρόβλημα">Τυχαίο Πρόβλημα</button>
+                    <div class="flex items-center gap-2">
+                        <label for="problemType" class="text-sm text-gray-600">Είδος:</label>
+                        <select id="problemType" class="w-auto px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="integers" selected>Ακέραιοι</option>
+                            <option value="decimals">Δεκαδικοί</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button id="resetProblem" class="w-full sm:w-auto bg-red-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-red-600 transition-colors" aria-label="Επαναφορά">Επαναφορά</button>
+            </div>
+
+            <!-- Multiplication Problem Area -->
+            <div id="problemContainer" class="flex justify-center my-4 min-h-[200px]" aria-live="polite" aria-atomic="true">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div id="actionButtons" class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6 hidden">
+             <button id="checkAnswer" class="w-full sm:w-auto bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors text-lg shadow-md" aria-label="Έλεγχος Απάντησης">Έλεγχος Απάντησης</button>
+             <button id="showSolution" class="w-full sm:w-auto bg-yellow-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-yellow-600 transition-colors" aria-label="Εμφάνιση Λύσης">Εμφάνιση Λύσης</button>
+         </div>
+
+         <!-- Message Area -->
+         <div id="message" class="text-center mt-6 text-lg font-medium h-8" role="alert" aria-live="assertive"></div>
+         <div id="detailedSolution" class="whitespace-pre-wrap mt-6 p-4 bg-gray-100 rounded-lg text-sm text-gray-800 hidden"></div>
+     </div>
+
+     <footer class="text-center mt-8 text-gray-400 text-sm">
+        <p>Πλοηγηθείτε στα πεδία εισαγωγής με τα βελάκια ή κάνοντας κλικ.</p>
+    </footer>
+</div>
+
+<script>
+        // --- Βοηθητικές Συναρτήσεις ---
+    function normalizeNumberInput(inputStr) {
+        if (!inputStr) return '';
+        let cleaned = inputStr.trim()
+        .replace(/\s/g, '')
+        .replace(/(?<=\d)\.(?=\d{3}(\D|$))/g, '');
+        if (cleaned.includes(',') && cleaned.includes('.')) {
+            cleaned = cleaned.replace(/\./g, '');
+        } else if (cleaned.includes('.')) {
+            cleaned = cleaned.replace('.', ',');
+        }
+        return cleaned;
+    }
+    function validateNumber(numStr) {
+        return /^[0-9]+(,[0-9]+)?$/.test(numStr);
+    }
+    function parseNumberToBigInt(numStr) {
+        const parts = numStr.split(',');
+        const decimalPlaces = parts.length === 2 ? parts[1].length : 0;
+        const intStr = parts.join('');
+        const intVal = BigInt(intStr);
+        return { intVal, decimalPlaces };
+    }
+    function formatBigIntWithDecimal(bigIntVal, decimalPlaces) {
+        let str = bigIntVal.toString();
+
+            // Αν δεν υπάρχουν δεκαδικά, επιστρέφουμε απλά το string
+        if (decimalPlaces === 0) return str;
+
+            // Αν το μήκος του string είναι μικρότερο ή ίσο με τα δεκαδικά, προσθέτουμε μηδενικά μπροστά
+        if (str.length <= decimalPlaces) {
+            str = str.padStart(decimalPlaces + 1, '0');
+        }
+
+        const intPart = str.slice(0, str.length - decimalPlaces);
+        const decPart = str.slice(str.length - decimalPlaces);
+
+            // Αφαιρούμε τυχόν περιττά μηδενικά δεξιά (προαιρετικό, αν θέλουμε)
+            // const trimmedDecPart = decPart.replace(/0+$/, '') || '0';
+
+            return intPart + ',' + decPart; // Επιστρέφουμε με κόμμα ως δεκαδικό διαχωριστικό
+        }
+
+
+        // --- DOM Elements ---
+        const num1Input = document.getElementById('num1');
+        const num2Input = document.getElementById('num2');
+        const generateProblemBtn = document.getElementById('generateProblem');
+        const randomProblemBtn = document.getElementById('randomProblem');
+        const resetProblemBtn = document.getElementById('resetProblem');
+        const problemContainer = document.getElementById('problemContainer');
+        const checkAnswerBtn = document.getElementById('checkAnswer');
+        const showSolutionBtn = document.getElementById('showSolution');
+        const messageEl = document.getElementById('message');
+        const actionButtons = document.getElementById('actionButtons');
+        const problemTypeSelect = document.getElementById('problemType');
+
+        let multiplicandStr = '', multiplierStr = '';
+
+        function getSolution(n1Str, n2Str) {
+            const n1 = parseNumberToBigInt(n1Str);
+            const n2 = parseNumberToBigInt(n2Str);
+            const totalDecimalPlaces = n1.decimalPlaces + n2.decimalPlaces;
+            const finalAnswerInt = n1.intVal * n2.intVal;
+            const multiplierDigits = n2Str.replace(',', '').split('').reverse();
+            const partialProducts = multiplierDigits.map(digit => {
+                return (n1.intVal * BigInt(digit)).toString();
+            });
+            return {
+                partialProducts,
+                finalAnswer: formatBigIntWithDecimal(finalAnswerInt, totalDecimalPlaces),
+                totalDecimalPlaces
+            };
+        }
+
+        function clearMessage() {
+            messageEl.textContent = '';
+            messageEl.className = 'text-center mt-6 text-lg font-medium h-8';
+        }
+        function showMessage(text, type = 'info') {
+            messageEl.textContent = text;
+            messageEl.className = `text-center mt-6 text-lg font-medium h-8 ${
+                type === 'error' ? 'text-red-500' :
+                type === 'success' ? 'text-green-600' :
+                type === 'info' ? 'text-blue-600' : ''
+            }`;
+        }
+
+        function setupProblem(n1, n2) {
+            multiplicandStr = n1;
+            multiplierStr = n2;
+
+            const solution = getSolution(n1, n2);
+
+            const multiplicandDigitsCount = n1.replace(',', '').length;
+            const multiplierDigitsCount = n2.replace(',', '').length;
+            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+
+            const multiplicandWidth = n1.replace(',', '').length;
+            const multiplierWidth = n2.replace(',', '').length + 2; // +2 for operator and space
+            const partialProductsWidths = solution.partialProducts.map((pp, i) => pp.length + i);
+            const finalAnswerWidth = solution.finalAnswer.replace(',', '').length;
+
+            const gridWidth = Math.max(
+                multiplicandWidth,
+                multiplierWidth,
+                ...partialProductsWidths,
+                finalAnswerWidth
+            ) + 1;
+
+            let html = `<div class="problem-grid" style="grid-template-columns: repeat(${gridWidth}, auto); position: relative;">`;
+
+            // Carry row
+            html += `<div class="empty"></div>`.repeat(gridWidth - multiplicandDigitsCount);
+            for (let i = 0; i < multiplicandDigitsCount; i++) {
+                html += `<input type="text" class="carry-input" id="carry-0-${i}" maxlength="1" data-row="0" data-col="${i}" aria-label="Κρατούμενο θέση ${i + 1}">`;
+            }
+
+            // Multiplicand row
+            html += `<div class="empty"></div>`.repeat(gridWidth - multiplicandDigitsCount);
+            let digitIndex = 0;
+            for (const char of n1) {
+                if (char !== ',') {
+                    html += `<span id="n1-digit-${digitIndex++}">${char}</span>`;
+                }
+            }
+
+            // Multiplier row
+            html += `<div class="empty"></div>`.repeat(gridWidth - multiplierDigitsCount - 1);
+            html += `<span class="operator" aria-hidden="true">×</span>`;
+            digitIndex = 0;
+            for (const char of n2) {
+                if (char !== ',') {
+                    html += `<span id="n2-digit-${digitIndex++}">${char}</span>`;
+                }
+            }
+
+            // Line
+            html += `<div class="problem-line"></div>`;
+
+            const finalAnswerWithComma = solution.finalAnswer;
+            const finalAnswerNoComma = finalAnswerWithComma.replace(',', '');
+            const totalDecimalPlaces = solution.totalDecimalPlaces;
+
+            if (singlePartial) {
+                // Only final answer
+                html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
+                for (let i = 0; i < finalAnswerNoComma.length; i++) {
+                    html += `<input type="text" id="ans-${i}" maxlength="1" data-row="1" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                }
+            } else {
+                // Partial products
+                solution.partialProducts.forEach((pp, i) => {
+                    if (i === solution.partialProducts.length - 1) {
+                        html += `<span class="operator">+</span>`;
+                    } else {
+                        html += `<div class="empty"></div>`;
+                    }
+                    html += `<div class="empty"></div>`.repeat(gridWidth - pp.length - i - 1);
+                    for (let j = 0; j < pp.length; j++) {
+                        html += `<input type="text" id="pp-${i}-${j}" maxlength="1" data-row="${i + 1}" data-col="${j}" aria-label="Ενδιάμεσο γινόμενο σειρά ${i + 1} θέση ${j + 1}">`;
+                    }
+                    html += `<div class="empty"></div>`.repeat(i);
+                });
+
+                // Final answer
+                html += `<div class="problem-line"></div>`;
+                html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
+                for (let i = 0; i < finalAnswerNoComma.length; i++) {
+                    html += `<input type="text" id="ans-${i}" maxlength="1" data-row="${multiplierStr.replace(',','').length + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                }
+            }
+
+            html += '</div>';
+            problemContainer.innerHTML = html;
+
+            // Function to place comma
+            const placeComma = (numStr, elementPrefix, topOffset = -5) => {
+                if (numStr.includes(',')) {
+                    const commaIndex = numStr.indexOf(',');
+                    const digitBeforeComma = document.getElementById(`${elementPrefix}-${commaIndex - 1}`);
+                    if (digitBeforeComma) {
+                        const commaSpan = document.createElement('span');
+                        commaSpan.className = 'number-comma';
+                        commaSpan.innerHTML = ',';
+                        digitBeforeComma.parentElement.appendChild(commaSpan);
+
+                        const digitRect = digitBeforeComma.getBoundingClientRect();
+                        const containerRect = digitBeforeComma.closest('.problem-grid').getBoundingClientRect();
+                        const leftPosition = digitRect.right - containerRect.left - 15;
+                        const topPosition = digitRect.top - containerRect.top + topOffset;
+
+                        commaSpan.style.left = leftPosition + 'px';
+                        commaSpan.style.top = topPosition + 'px';
+                    }
+                }
+            };
+
+            // Place commas for multiplicand and multiplier
+            placeComma(n1, 'n1-digit', -2);
+            placeComma(n2, 'n2-digit', -2);
+
+            // Place comma for final answer
+            if (totalDecimalPlaces > 0) {
+                const commaPosition = finalAnswerNoComma.length - totalDecimalPlaces;
+                const inputBeforeComma = document.getElementById(`ans-${commaPosition - 1}`);
+                if (inputBeforeComma) {
+                    const commaElement = document.createElement('span');
+                    commaElement.className = 'final-comma';
+                    commaElement.innerHTML = ',';
+                    inputBeforeComma.parentElement.appendChild(commaElement);
+
+                    const inputRect = inputBeforeComma.getBoundingClientRect();
+                    const containerRect = inputBeforeComma.closest('.problem-grid').getBoundingClientRect();
+                    const leftPosition = inputRect.right - containerRect.left - 10;
+                    const topPosition = inputRect.top - containerRect.top - 5;
+
+                    commaElement.style.left = leftPosition + 'px';
+                    commaElement.style.top = topPosition + 'px';
+                }
+            }
+
+            actionButtons.classList.remove('hidden');
+            clearMessage();
+            addInputNavigation();
+        }
+
+
+        function addInputNavigation() {
+            const inputs = document.querySelectorAll('.problem-grid input');
+            inputs.forEach(input => {
+                input.addEventListener('keydown', handleArrowNavigation);
+                input.addEventListener('input', handleAutoTab);
+                input.addEventListener('focus', () => {
+                    input.classList.remove('correct', 'incorrect');
+                    clearMessage();
+                });
+            });
+        }
+        function handleAutoTab(e) {
+            if (e.target.value && e.target.maxLength === e.target.value.length) {
+                const allInputs = Array.from(document.querySelectorAll('.problem-grid input:not(.carry-input)'));
+                const currentIndex = allInputs.indexOf(e.target);
+                if (currentIndex < allInputs.length - 1) {
+                    allInputs[currentIndex + 1].focus();
+                }
+            }
+        }
+        function handleArrowNavigation(e) {
+            const { key } = e;
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
+            e.preventDefault();
+            const currentInput = e.target;
+            const currentRow = parseInt(currentInput.dataset.row);
+            const currentCol = parseInt(currentInput.dataset.col);
+            let nextInput = null;
+            if (key === 'ArrowLeft') {
+                nextInput = currentInput.previousElementSibling;
+                while (nextInput && nextInput.tagName !== 'INPUT') nextInput = nextInput.previousElementSibling;
+            } else if (key === 'ArrowRight') {
+                nextInput = currentInput.nextElementSibling;
+                while (nextInput && nextInput.tagName !== 'INPUT') nextInput = nextInput.nextElementSibling;
+            } else {
+                const nextRow = key === 'ArrowUp' ? currentRow - 1 : currentRow + 1;
+                nextInput = document.querySelector(`[data-row="${nextRow}"][data-col="${currentCol}"]`);
+            }
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select();
+            }
+        }
+
+        function getUserInput() {
+            const solution = getSolution(multiplicandStr, multiplierStr);
+            const userInput = {
+                partialProducts: [],
+                finalAnswer: ''
+            };
+            const multiplicandDigitsCount = multiplicandStr.replace(',', '').length;
+            const multiplierDigitsCount = multiplierStr.replace(',', '').length;
+            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+
+            if (singlePartial) {
+                // Only final answer is filled in this case
+                const finalAnswerDigits = solution.finalAnswer.replace(',', '').length;
+                let ansString = '';
+                for (let i = 0; i < finalAnswerDigits; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) ansString += input.value || ' ';
+                }
+                userInput.finalAnswer = ansString;
+            } else {
+                // Get partial products
+                solution.partialProducts.forEach((pp, i) => {
+                    let ppString = '';
+                    for (let j = 0; j < pp.length; j++) {
+                        const input = document.getElementById(`pp-${i}-${j}`);
+                        if (input) ppString += input.value || ' ';
+                    }
+                    userInput.partialProducts.push(ppString);
+                });
+
+                // Get final answer
+                const finalAnswerDigits = solution.finalAnswer.replace(',', '').length;
+                let ansString = '';
+                for (let i = 0; i < finalAnswerDigits; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) ansString += input.value || ' ';
+                }
+                userInput.finalAnswer = ansString;
+            }
+            return userInput;
+        }
+
+        function checkAnswer() {
+            const solution = getSolution(multiplicandStr, multiplierStr);
+            const userInput = getUserInput();
+            let allCorrect = true;
+
+            const multiplicandDigitsCount = multiplicandStr.replace(',', '').length;
+            const multiplierDigitsCount = multiplierStr.replace(',', '').length;
+            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+
+            if (singlePartial) {
+                const correctFinalAnswer = solution.finalAnswer.replace(',', '');
+                const userFinalAnswer = userInput.finalAnswer;
+
+                // Check final answer digit by digit
+                for (let i = 0; i < correctFinalAnswer.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) {
+                        const isDigitCorrect = userFinalAnswer[i] === correctFinalAnswer[i];
+                        input.classList.toggle('correct', isDigitCorrect);
+                        input.classList.toggle('incorrect', !isDigitCorrect);
+                        if (!isDigitCorrect) allCorrect = false;
+                    }
+                }
+                // If user provided a different number of digits, it's not fully correct
+                if (userFinalAnswer.length !== correctFinalAnswer.length) allCorrect = false;
+
+            } else {
+                // Check partial products digit by digit
+                solution.partialProducts.forEach((correctPP, i) => {
+                    const userPP = userInput.partialProducts[i];
+                    for (let j = 0; j < correctPP.length; j++) {
+                        const input = document.getElementById(`pp-${i}-${j}`);
+                        if (input) {
+                            const isDigitCorrect = userPP[j] === correctPP[j];
+                            input.classList.toggle('correct', isDigitCorrect);
+                            input.classList.toggle('incorrect', !isDigitCorrect);
+                            if (!isDigitCorrect) allCorrect = false;
+                        }
+                    }
+                    if (userPP.length !== correctPP.length) allCorrect = false;
+                });
+
+                // Check final answer digit by digit
+                const correctFinalAnswer = solution.finalAnswer.replace(',', '');
+                const userFinalAnswer = userInput.finalAnswer;
+                for (let i = 0; i < correctFinalAnswer.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) {
+                        const isDigitCorrect = userFinalAnswer[i] === correctFinalAnswer[i];
+                        input.classList.toggle('correct', isDigitCorrect);
+                        input.classList.toggle('incorrect', !isDigitCorrect);
+                        if (!isDigitCorrect) allCorrect = false;
+                    }
+                }
+                if (userFinalAnswer.length !== correctFinalAnswer.length) allCorrect = false;
+            }
+
+            if (allCorrect) {
+                showMessage('Άριστα! Όλα είναι σωστά.', 'success');
+            } else {
+                showMessage('Κάποια σημεία είναι λάθος. Δείτε τα κόκκινα πλαίσια.', 'error');
+            }
+        }
+
+        function showSolution() {
+            const solution = getSolution(multiplicandStr, multiplierStr);
+            const multiplicandDigitsCount = multiplicandStr.replace(',', '').length;
+            const multiplierDigitsCount = multiplierStr.replace(',', '').length;
+            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+
+            if (singlePartial) {
+                const finalAnswerDigits = solution.finalAnswer.replace(',', '');
+                for (let i = 0; i < finalAnswerDigits.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) {
+                        input.value = finalAnswerDigits[i];
+                        input.classList.remove('incorrect');
+                        input.classList.add('correct');
+                    }
+                }
+            } else {
+                solution.partialProducts.forEach((pp, i) => {
+                    for (let j = 0; j < pp.length; j++) {
+                        const input = document.getElementById(`pp-${i}-${j}`);
+                        if (input) {
+                            input.value = pp[j];
+                            input.classList.remove('incorrect');
+                            input.classList.add('correct');
+                        }
+                    }
+                });
+                const finalAnswerDigits = solution.finalAnswer.replace(',', '');
+                for (let i = 0; i < finalAnswerDigits.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) {
+                        input.value = finalAnswerDigits[i];
+                        input.classList.remove('incorrect');
+                        input.classList.add('correct');
+                    }
+                }
+            }
+
+            showMessage('Εμφάνιση της λύσης.', 'info');
+
+    // === Αναλυτική Λεκτική Λύση ===
+            const detailedSolutionDiv = document.getElementById('detailedSolution');
+            if (detailedSolutionDiv) {
+                const n1 = parseNumberToBigInt(multiplicandStr);
+                const n2 = parseNumberToBigInt(multiplierStr);
+                const solution = getSolution(multiplicandStr, multiplierStr);
+                const ppList = solution.partialProducts;
+
+                let text = `Λύση:
+${multiplicandStr} × ${multiplierStr} = ${solution.finalAnswer}
+
+Βήματα:
+`;
+
+            const multiplierDigits = multiplierStr.replace(',', '').split('').reverse();
+            multiplierDigits.forEach((digit, i) => {
+                const positionValue = BigInt(digit) * BigInt(10 ** i);
+                const multiplicandInt = parseNumberToBigInt(multiplicandStr).intVal;
+                const totalDecimalPlaces = parseNumberToBigInt(multiplicandStr).decimalPlaces + parseNumberToBigInt(multiplierStr).decimalPlaces;
+                const rawResult = multiplicandInt * positionValue;
+
+                const resultStr = formatBigIntWithDecimal(rawResult, totalDecimalPlaces);
+                text += `${multiplicandStr} × ${positionValue} = ${resultStr}\n`;
+            });
+
+            if (multiplierDigits.length > 1) {
+                text += `\nΆθροισμα:\n`;
+                const decimalPlaces = parseNumberToBigInt(multiplicandStr).decimalPlaces + parseNumberToBigInt(multiplierStr).decimalPlaces;
+                const formattedTerms = ppList.map((pp, i) => {
+                const termBigInt = BigInt(pp) * BigInt(10 ** i);
+                return formatBigIntWithDecimal(termBigInt, decimalPlaces);
+            });
+            text += formattedTerms.join(' + ');
+            text += ` = ${solution.finalAnswer}`;
+
+            }
+
+            detailedSolutionDiv.textContent = text;
+            detailedSolutionDiv.classList.remove('hidden');
+        }
+    }
+
+
+    function resetProblem() {
+        num1Input.value = '';
+        num2Input.value = '';
+        problemContainer.innerHTML = '';
+
+        const detailedSolutionDiv = document.getElementById('detailedSolution');
+        if (detailedSolutionDiv) {
+            detailedSolutionDiv.classList.add('hidden');
+            detailedSolutionDiv.textContent = '';
+        }
+
+        actionButtons.classList.add('hidden');
+        clearMessage();
+        multiplicandStr = '';
+        multiplierStr = '';
+        num1Input.focus();
+    }
+
+    generateProblemBtn.addEventListener('click', () => {
+        const n1Raw = num1Input.value;
+        const n2Raw = num2Input.value;
+        const n1 = normalizeNumberInput(n1Raw);
+        const n2 = normalizeNumberInput(n2Raw);
+        const detailedSolutionDiv = document.getElementById('detailedSolution');
+        if (detailedSolutionDiv) {
+            detailedSolutionDiv.classList.add('hidden');
+            detailedSolutionDiv.textContent = '';
+        }
+
+        if (n1 && n2 && validateNumber(n1) && validateNumber(n2)) {
+            setupProblem(n1, n2);
+        } else {
+            showMessage('Παρακαλώ εισάγετε έγκυρους αριθμούς (π.χ. 123 ή 45,6).', 'error');
+        }
+    });
+
+    function generateRandomProblem() {
+        const detailedSolutionDiv = document.getElementById('detailedSolution');
+        if (detailedSolutionDiv) {
+            detailedSolutionDiv.classList.add('hidden');
+            detailedSolutionDiv.textContent = '';
+        }
+
+        const problemType = problemTypeSelect.value;
+        let n1, n2;
+
+        if (problemType === 'integers') {
+            n1 = (Math.floor(Math.random() * 999) + 1).toString();
+            n2 = (Math.floor(Math.random() * 99) + 1).toString();
+        } else { // decimals
+            const createDecimal = (maxInt, maxDec) => {
+                const intPart = Math.floor(Math.random() * maxInt) + 1;
+                let decPartNum;
+                let decPartStr;
+
+                // Ensure decPartNum is not 0 if maxDec > 0, to guarantee a decimal
+                if (maxDec > 0) {
+                    do {
+                        decPartNum = Math.floor(Math.random() * (10**maxDec));
+                    } while (decPartNum === 0); // Keep generating until non-zero decimal part
+                    decPartStr = decPartNum.toString().padStart(maxDec, '0').replace(/0+$/, '');
+                } else {
+                    decPartStr = ''; // No decimal part if maxDec is 0
+                }
+
+                if (decPartStr === '') {
+                    return intPart.toString();
+                }
+                return `${intPart},${decPartStr}`;
+            };
+
+            let generatedN1, generatedN2;
+            let isDecimalProblem = false;
+
+            do {
+                const useDec1 = Math.random() > 0.4; 
+                const useDec2 = Math.random() > 0.4; 
+
+                generatedN1 = useDec1 ? createDecimal(99, 1) : (Math.floor(Math.random() * 999) + 1).toString();
+                generatedN2 = useDec2 ? createDecimal(9, 1) : (Math.floor(Math.random() * 99) + 1).toString();
+
+                isDecimalProblem = generatedN1.includes(',') || generatedN2.includes(',');
+
+            } while (!isDecimalProblem); 
+
+            n1 = generatedN1;
+            n2 = generatedN2;
+        }
+
+        num1Input.value = n1;
+        num2Input.value = n2;
+        const normalizedN1 = normalizeNumberInput(n1);
+        const normalizedN2 = normalizeNumberInput(n2);
+        setupProblem(normalizedN1, normalizedN2);
+    }
+
+    randomProblemBtn.addEventListener('click', generateRandomProblem);
+    problemTypeSelect.addEventListener('change', generateRandomProblem);
+
+    resetProblemBtn.addEventListener('click', resetProblem);
+    checkAnswerBtn.addEventListener('click', checkAnswer);
+    showSolutionBtn.addEventListener('click', showSolution);
+
+        // --- Αρχική κατάσταση ---
+    randomProblemBtn.click();
+</script>
+</body>
+</html>
