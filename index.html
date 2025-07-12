@@ -275,7 +275,7 @@
             // Carry row
             html += `<div class="empty"></div>`.repeat(gridWidth - multiplicandDigitsCount);
             for (let i = 0; i < multiplicandDigitsCount; i++) {
-                html += `<input type="text" class="carry-input" id="carry-0-${i}" maxlength="1" data-row="0" data-col="${i}" aria-label="Κρατούμενο θέση ${i + 1}">`;
+                html += `<input type="text" inputmode="numeric" class="carry-input" id="carry-0-${i}" maxlength="1" data-row="0" data-col="${i}" aria-label="Κρατούμενο θέση ${i + 1}">`;
             }
 
             // Multiplicand row
@@ -308,7 +308,7 @@
                 // Only final answer
                 html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
                 for (let i = 0; i < finalAnswerNoComma.length; i++) {
-                    html += `<input type="text" id="ans-${i}" maxlength="1" data-row="1" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="1" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
                 }
             } else {
                 // Partial products
@@ -320,7 +320,7 @@
                     }
                     html += `<div class="empty"></div>`.repeat(gridWidth - pp.length - i - 1);
                     for (let j = 0; j < pp.length; j++) {
-                        html += `<input type="text" id="pp-${i}-${j}" maxlength="1" data-row="${i + 1}" data-col="${j}" aria-label="Ενδιάμεσο γινόμενο σειρά ${i + 1} θέση ${j + 1}">`;
+                        html += `<input type="text" inputmode="numeric" id="pp-${i}-${j}" maxlength="1" data-row="${i + 1}" data-col="${j}" aria-label="Ενδιάμεσο γινόμενο σειρά ${i + 1} θέση ${j + 1}">`;
                     }
                     html += `<div class="empty"></div>`.repeat(i);
                 });
@@ -329,7 +329,7 @@
                 html += `<div class="problem-line"></div>`;
                 html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
                 for (let i = 0; i < finalAnswerNoComma.length; i++) {
-                    html += `<input type="text" id="ans-${i}" maxlength="1" data-row="${multiplierStr.replace(',','').length + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="${multiplierStr.replace(',','').length + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
                 }
             }
 
