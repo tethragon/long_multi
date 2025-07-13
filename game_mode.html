@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Πολλαπλασιασμός - Game Mode</title>
+    <!--
+            Αυτή η διαδραστική άσκηση πολλαπλασιασμού δημιουργήθηκε από: Γιώργος Πετράκης
+            Έκδοση: 9.0
+            Ημερομηνία: 12 Ιουλίου 2025
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .problem-grid {
+            display: grid;
+            justify-content: end;
+            align-items: center;
+            font-family: monospace;
+            font-size: 1.5rem;
+            line-height: 2rem;
+            direction: ltr;
+            position: relative;
+        }
+        .problem-grid input {
+            width: 1.5rem;
+            height: 2rem;
+            text-align: center;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            background-color: #f9fafb;
+            caret-color: auto;
+            font-size: 1.5rem;
+            padding: 0;
+            margin: 0 1px;
+        }
+        .problem-grid input:focus {
+            outline: 2px solid #3b82f6;
+            background-color: #eff6ff;
+        }
+        .problem-grid .carry-input {
+            width: 1rem;
+            height: 1.25rem;
+            font-size: 0.875rem;
+            border-color: transparent;
+            background-color: transparent;
+            color: #ef4444;
+            margin: 0 0.25rem;
+            position: relative;
+            top: -0.5rem;
+            caret-color: auto;
+        }
+        .problem-grid .empty {
+            width: 1.5rem;
+        }
+        .problem-grid .operator {
+            padding-right: 0.5rem;
+            user-select: none;
+            font-weight: 700;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .problem-line {
+            border-bottom: 2px solid #111827;
+            grid-column: 1 / -1;
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .correct {
+            background-color: #dcfce7 !important;
+            border-color: #22c55e !important;
+        }
+        .incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+        .final-comma, .number-comma {
+            position: absolute;
+            font-weight: 700;
+            color: #374151;
+            user-select: none;
+            font-size: 1.5rem;
+            line-height: 2.5rem;
+            pointer-events: none;
+            text-align: right;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-2xl mx-auto p-4 md:p-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <header class="text-center mb-6">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Πολλαπλασιασμός</h1>
+                <p class="text-gray-500 mt-1 text-3xl md:text-4xl font-bold">Game Mode</p>
+            </header>
+
+            <!-- Game Stats Area -->
+            <div class="flex justify-between items-center mb-6 text-lg font-semibold text-gray-700">
+                <p>Πρόβλημα: <span id="currentProblemDisplay">1 / 5</span></p>
+                <p>Σκορ: <span id="currentScoreDisplay">0%</span></p>
+                <p>High Score: <span id="highScoreDisplay">0%</span></p>
+            </div>
+            
+            <!-- Multiplication Problem Area -->
+            <div id="problemContainer" class="flex flex-grow justify-center items-center my-4 min-h-[200px]" aria-live="polite" aria-atomic="true">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+
+            <!-- Action Buttons -->
+            <div id="actionButtons" class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+                <button id="checkAnswer" class="w-full sm:w-auto bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors text-lg shadow-md" aria-label="Έλεγχος Απάντησης">Έλεγχος Απάντησης</button>
+                <button id="nextProblem" class="w-full sm:w-auto bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg shadow-md hidden" aria-label="Επόμενη Άσκηση">Επόμενη Άσκηση</button>
+                <a href="index.html" class="w-full sm:w-auto bg-gray-200 text-gray-800 font-semibold px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-center" aria-label="Επιστροφή στην Αρχική Σελίδα">Επιστροφή</a>
+                <!-- Restart Game Button -->
+                <button id="restartGame" class="bg-yellow-500 text-white p-2 rounded-lg hover:bg-yellow-600 transition-colors shadow-md" aria-label="Επανεκκίνηση Παιχνιδιού">
+                    <!-- Classic circular arrow icon (Redo/Refresh) -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 4v6h-6"/>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Message Area -->
+            <div id="message" class="text-center mt-6 text-lg font-medium h-8" role="alert" aria-live="assertive"></div>
+            <!-- Detailed Solution Area -->
+            <!-- Increased mt-4 to mt-8 for more spacing -->
+            <div id="detailedSolution" class="whitespace-pre-wrap mt-8 p-4 bg-gray-100 rounded-lg text-sm text-gray-800 hidden"></div>
+        </div>
+
+        <footer class="text-center mt-8 text-gray-400 text-sm">
+            <p>Πλοηγηθείτε στα πεδία εισαγωγής με τα βελάκια ή κάνοντας κλικ.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- Game State Variables ---
+        let currentProblemIndex = 0;
+        let totalCorrectCells = 0;
+        let totalPossibleCells = 0; // This will now be pre-calculated once
+        let currentProblemCells = 0; // Cells for the current problem
+        let answeredCells = 0;
+
+        // Problem progression as requested: 2x1, 2x2, 3x2, 3x3, 4x3
+        const problemsToSolve = [
+            { num1Digits: 2, num2Digits: 1 },
+            { num1Digits: 2, num2Digits: 2 },
+            { num1Digits: 3, num2Digits: 2 },
+            { num1Digits: 3, num2Digits: 3 },
+            { num1Digits: 4, num2Digits: 3 }
+        ];
+
+        // Store all problems and their solutions for the current game session
+        // Each object will also store userInput and correct cells for reporting
+        let allGameProblems = [];
+
+        let multiplicandStr = '', multiplierStr = '';
+
+        // --- DOM Elements ---
+        const problemContainer = document.getElementById('problemContainer');
+        const checkAnswerBtn = document.getElementById('checkAnswer');
+        const nextProblemBtn = document.getElementById('nextProblem');
+        const restartGameBtn = document.getElementById('restartGame');
+        const messageEl = document.getElementById('message');
+        const currentProblemDisplay = document.getElementById('currentProblemDisplay');
+        const currentScoreDisplay = document.getElementById('currentScoreDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        const detailedSolutionEl = document.getElementById('detailedSolution'); // Get the detailed solution element
+
+        // --- Helper Functions (copied and adapted from original) ---
+        function getHighscore() {
+            const highscore = localStorage.getItem('multiplicationHighscore');
+            return highscore ? parseInt(highscore) : 0;
+        }
+
+        function updateHighscore(score) {
+            const currentHighscore = getHighscore();
+            if (score > currentHighscore) {
+                localStorage.setItem('multiplicationHighscore', score);
+                highScoreDisplay.textContent = `${score}%`;
+            }
+        }
+
+        function normalizeNumberInput(inputStr) {
+            if (!inputStr) return '';
+            let cleaned = inputStr.trim()
+                .replace(/\s/g, '')
+                .replace(/(?<=\d)\.(?=\d{3}(\D|$))/g, '');
+            if (cleaned.includes(',') && cleaned.includes('.')) {
+                cleaned = cleaned.replace(/\./g, '');
+            } else if (cleaned.includes('.')) {
+                cleaned = cleaned.replace('.', ',');
+            }
+            return cleaned;
+        }
+        function validateNumber(numStr) {
+            return /^[0-9]+(,[0-9]+)?$/.test(numStr);
+        }
+        function parseNumberToBigInt(numStr) {
+            const parts = numStr.split(',');
+            const decimalPlaces = parts.length === 2 ? parts[1].length : 0;
+            const intStr = parts.join('');
+            const intVal = BigInt(intStr);
+            return { intVal, decimalPlaces };
+        }
+        function formatBigIntWithDecimal(bigIntVal, decimalPlaces) {
+            let str = bigIntVal.toString();
+            if (decimalPlaces === 0) return str;
+            if (str.length <= decimalPlaces) {
+                str = str.padStart(decimalPlaces + 1, '0');
+            }
+            const intPart = str.slice(0, str.length - decimalPlaces);
+            const decPart = str.slice(str.length - decimalPlaces);
+            return intPart + ',' + decPart;
+        }
+        function getSolution(n1Str, n2Str) {
+            const n1 = parseNumberToBigInt(n1Str);
+            const n2 = parseNumberToBigInt(n2Str);
+            const totalDecimalPlaces = n1.decimalPlaces + n2.decimalPlaces;
+            const finalAnswerInt = n1.intVal * n2.intVal;
+            const multiplierDigits = n2Str.replace(',', '').split('').reverse();
+            const partialProducts = multiplierDigits.map(digit => {
+                return (n1.intVal * BigInt(digit)).toString();
+            });
+            return {
+                partialProducts,
+                finalAnswer: formatBigIntWithDecimal(finalAnswerInt, totalDecimalPlaces),
+                totalDecimalPlaces
+            };
+        }
+        function clearMessage() {
+            messageEl.innerHTML = '';
+            messageEl.className = 'text-center mt-6 text-lg font-medium h-8';
+        }
+        function showMessage(text, type = 'info') {
+            messageEl.innerHTML = text;
+            messageEl.className = `text-center mt-6 text-lg font-medium h-8 ${
+                type === 'error' ? 'text-red-500' :
+                type === 'success' ? 'text-green-600' :
+                type === 'info' ? 'text-blue-600' : ''
+            }`;
+        }
+
+        // --- Game Logic Functions ---
+        function generateRandomNumber(digits) {
+            const min = Math.pow(10, digits - 1);
+            const max = Math.pow(10, digits) - 1;
+            return (Math.floor(Math.random() * (max - min + 1)) + min).toString();
+        }
+
+        // Helper to simulate rendering and count cells without actually rendering
+        function countExpectedCells(n1Str, n2Str, solution) {
+            const multiplicandDigitsCount = n1Str.replace(',', '').length;
+            const multiplierDigitsCount = n2Str.replace(',', '').length;
+            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+
+            const finalAnswerNoComma = solution.finalAnswer.replace(',', '');
+            
+            if (singlePartial) {
+                return finalAnswerNoComma.length;
+            } else {
+                return solution.partialProducts.reduce((acc, pp) => acc + pp.length, 0) + finalAnswerNoComma.length;
+            }
+        }
+
+        // Function to initialize or reset the game state and problems
+        function initializeGame() {
+            currentProblemIndex = 0;
+            totalCorrectCells = 0;
+            totalPossibleCells = 0; // Reset for recalculation
+            currentProblemCells = 0;
+            answeredCells = 0;
+            allGameProblems = []; // Clear previous problems
+
+            // Generate all 5 problems and calculate totalPossibleCells accurately
+            problemsToSolve.forEach(problemConfig => {
+                const n1 = generateRandomNumber(problemConfig.num1Digits);
+                const n2 = generateRandomNumber(problemConfig.num2Digits);
+                const solution = getSolution(n1, n2);
+                // Store problem data, solution, and initialize user input/score for this problem
+                allGameProblems.push({ 
+                    n1: n1, 
+                    n2: n2, 
+                    solution: solution, 
+                    userInput: { partialProducts: [], finalAnswer: '' }, // Placeholder for user input
+                    correctCellsThisProblem: 0,
+                    totalCellsThisProblem: 0 // Will be updated after rendering
+                });
+                totalPossibleCells += countExpectedCells(n1, n2, solution);
+            });
+
+            // Reset UI elements
+            clearMessage();
+            problemContainer.innerHTML = '';
+            checkAnswerBtn.classList.remove('hidden');
+            nextProblemBtn.classList.add('hidden');
+            detailedSolutionEl.classList.add('hidden'); // Hide report on new game
+            
+            // Start the first problem
+            setupGameProblem();
+        }
+
+        // Modified setupGameProblem to use pre-generated problems
+        function setupGameProblem() {
+            const currentProblemData = allGameProblems[currentProblemIndex];
+            multiplicandStr = currentProblemData.n1;
+            multiplierStr = currentProblemData.n2;
+            const solution = currentProblemData.solution; // Use the pre-calculated solution
+
+            // Render the problem grid
+            renderProblemGrid(multiplicandStr, multiplierStr, solution);
+
+            // currentProblemCells is now just for the current problem's inputs
+            const renderedInputs = document.querySelectorAll('#problemContainer .problem-grid input:not(.carry-input)');
+            currentProblemCells = renderedInputs.length; 
+            allGameProblems[currentProblemIndex].totalCellsThisProblem = currentProblemCells; // Store for report
+
+            answeredCells = 0; // Reset for the current problem
+
+            // Update display
+            currentProblemDisplay.textContent = `${currentProblemIndex + 1} / ${problemsToSolve.length}`;
+            const currentPercentage = totalPossibleCells > 0 ? Math.round((totalCorrectCells / totalPossibleCells) * 100) : 0;
+            currentScoreDisplay.textContent = `${currentPercentage}%`;
+        }
+
+        function renderProblemGrid(n1, n2, solution) {
+            const multiplicandDigitsCount = n1.replace(',', '').length;
+            const multiplierDigitsCount = n2.replace(',', '').length;
+            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+
+            const multiplicandWidth = n1.replace(',', '').length;
+            const multiplierWidth = n2.replace(',', '').length + 2;
+            const partialProductsWidths = solution.partialProducts.map((pp, i) => pp.length + i);
+            const finalAnswerWidth = solution.finalAnswer.replace(',', '').length;
+
+            const gridWidth = Math.max(
+                multiplicandWidth,
+                multiplierWidth,
+                ...partialProductsWidths,
+                finalAnswerWidth
+            ) + 1;
+
+            let html = `<div class="problem-grid" style="grid-template-columns: repeat(${gridWidth}, auto); position: relative;">`;
+
+            // Carry row (not used in scoring, so we keep it simple)
+            html += `<div class="empty"></div>`.repeat(gridWidth - multiplicandDigitsCount);
+            for (let i = 0; i < multiplicandDigitsCount; i++) {
+                html += `<input type="text" inputmode="numeric" class="carry-input" id="carry-0-${i}" maxlength="1" data-row="0" data-col="${i}" aria-label="Κρατούμενο θέση ${i + 1}">`;
+            }
+
+            // Multiplicand row
+            html += `<div class="empty"></div>`.repeat(gridWidth - multiplicandDigitsCount);
+            let digitIndex = 0;
+            for (const char of n1) {
+                if (char !== ',') {
+                    html += `<span id="n1-digit-${digitIndex++}">${char}</span>`;
+                }
+            }
+
+            // Multiplier row
+            html += `<div class="empty"></div>`.repeat(gridWidth - multiplierDigitsCount - 1);
+            html += `<span class="operator" aria-hidden="true">×</span>`;
+            digitIndex = 0;
+            for (const char of n2) {
+                if (char !== ',') {
+                    html += `<span id="n2-digit-${digitIndex++}">${char}</span>`;
+                }
+            }
+
+            // Line
+            html += `<div class="problem-line"></div>`;
+
+            const finalAnswerNoComma = solution.finalAnswer.replace(',', '');
+
+            if (singlePartial) {
+                // Only final answer
+                html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
+                for (let i = 0; i < finalAnswerNoComma.length; i++) {
+                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="1" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                }
+            } else {
+                // Partial products
+                solution.partialProducts.forEach((pp, i) => {
+                    if (i === solution.partialProducts.length - 1) {
+                        html += `<span class="operator">+</span>`;
+                    } else {
+                        html += `<div class="empty"></div>`;
+                    }
+                    html += `<div class="empty"></div>`.repeat(gridWidth - pp.length - i - 1);
+                    for (let j = 0; j < pp.length; j++) {
+                        html += `<input type="text" inputmode="numeric" id="pp-${i}-${j}" maxlength="1" data-row="${i + 1}" data-col="${j}" aria-label="Ενδιάμεσο γινόμενο σειρά ${i + 1} θέση ${j + 1}">`;
+                    }
+                    html += `<div class="empty"></div>`.repeat(i);
+                });
+
+                // Final answer
+                html += `<div class="problem-line"></div>`;
+                html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
+                for (let i = 0; i < finalAnswerNoComma.length; i++) {
+                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="${multiplierStr.replace(',','')}.length + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                }
+            }
+
+            html += '</div>';
+            problemContainer.innerHTML = html;
+
+            // Function to place comma
+            const placeComma = (numStr, elementPrefix, topOffset = -5) => {
+                if (numStr.includes(',')) {
+                    const commaIndex = numStr.indexOf(',');
+                    const digitBeforeComma = document.getElementById(`${elementPrefix}-${commaIndex - 1}`);
+                    if (digitBeforeComma) {
+                        const commaSpan = document.createElement('span');
+                        commaSpan.className = 'number-comma';
+                        commaSpan.innerHTML = ',';
+                        digitBeforeComma.parentElement.appendChild(commaSpan);
+
+                        const digitRect = digitBeforeComma.getBoundingClientRect();
+                        const containerRect = digitBeforeComma.closest('.problem-grid').getBoundingClientRect();
+                        const leftPosition = digitRect.right - containerRect.left - 15;
+                        const topPosition = digitRect.top - containerRect.top + topOffset;
+
+                        commaSpan.style.left = leftPosition + 'px';
+                        commaSpan.style.top = topPosition + 'px';
+                    }
+                }
+            };
+            placeComma(n1, 'n1-digit', -2);
+            placeComma(n2, 'n2-digit', -2);
+
+            if (solution.totalDecimalPlaces > 0) {
+                const commaPosition = finalAnswerNoComma.length - solution.totalDecimalPlaces;
+                const inputBeforeComma = document.getElementById(`ans-${commaPosition - 1}`);
+                if (inputBeforeComma) {
+                    const commaElement = document.createElement('span');
+                    commaElement.className = 'final-comma';
+                    commaElement.innerHTML = ',';
+                    inputBeforeComma.parentElement.appendChild(commaElement);
+
+                    const inputRect = inputBeforeComma.getBoundingClientRect();
+                    const containerRect = inputBeforeComma.closest('.problem-grid').getBoundingClientRect();
+                    const leftPosition = inputRect.right - containerRect.left - 10;
+                    const topPosition = inputRect.top - containerRect.top - 5;
+
+                    commaElement.style.left = leftPosition + 'px';
+                    commaElement.style.top = topPosition + 'px';
+                }
+            }
+
+            clearMessage();
+            addInputNavigation();
+        }
+
+        function addInputNavigation() {
+            const inputs = document.querySelectorAll('.problem-grid input');
+            inputs.forEach(input => {
+                input.addEventListener('keydown', handleArrowNavigation);
+                input.addEventListener('input', handleAutoTab);
+                input.addEventListener('input', handleNumericInput);
+                input.addEventListener('focus', () => {
+                    input.classList.remove('correct', 'incorrect');
+                    clearMessage();
+                });
+            });
+        }
+        function handleNumericInput(e) {
+            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        }
+        function handleAutoTab(e) {
+            if (e.target.value && e.target.maxLength === e.target.value.length) {
+                const allInputs = Array.from(document.querySelectorAll('.problem-grid input:not(.carry-input)'));
+                const currentIndex = allInputs.indexOf(e.target);
+                if (currentIndex < allInputs.length - 1) {
+                    allInputs[currentIndex + 1].focus();
+                }
+            }
+        }
+        function handleArrowNavigation(e) {
+            const { key } = e;
+            if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return;
+            e.preventDefault();
+            const currentInput = e.target;
+            const currentRow = parseInt(currentInput.dataset.row);
+            const currentCol = parseInt(currentInput.dataset.col);
+            let nextInput = null;
+            if (key === 'ArrowLeft') {
+                nextInput = currentInput.previousElementSibling;
+                while (nextInput && nextInput.tagName !== 'INPUT') nextInput = nextInput.previousElementSibling;
+            } else if (key === 'ArrowRight') {
+                nextInput = currentInput.nextElementSibling;
+                while (nextInput && nextInput.tagName !== 'INPUT') nextInput = nextInput.nextElementSibling;
+            } else {
+                const nextRow = key === 'ArrowUp' ? currentRow - 1 : currentRow + 1;
+                nextInput = document.querySelector(`[data-row="${nextRow}"][data-col="${currentCol}"]`);
+            }
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select();
+            }
+        }
+        function getUserInput() {
+            const solution = allGameProblems[currentProblemIndex].solution; // Get solution from stored data
+            const userInput = {
+                partialProducts: [],
+                finalAnswer: ''
+            };
+            const singlePartial = problemsToSolve[currentProblemIndex].num1Digits === 1 || problemsToSolve[currentProblemIndex].num2Digits === 1;
+
+            if (singlePartial) {
+                const finalAnswerDigits = solution.finalAnswer.replace(',', '').length;
+                let ansString = '';
+                for (let i = 0; i < finalAnswerDigits; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) ansString += input.value || ' ';
+                }
+                userInput.finalAnswer = ansString;
+            } else {
+                solution.partialProducts.forEach((pp, i) => {
+                    let ppString = '';
+                    for (let j = 0; j < pp.length; j++) {
+                        const input = document.getElementById(`pp-${i}-${j}`);
+                        if (input) ppString += input.value || ' ';
+                    }
+                    userInput.partialProducts.push(ppString);
+                });
+                const finalAnswerDigits = solution.finalAnswer.replace(',', '').length;
+                let ansString = '';
+                for (let i = 0; i < finalAnswerDigits; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) ansString += input.value || ' ';
+                }
+                userInput.finalAnswer = ansString;
+            }
+            return userInput;
+        }
+
+        function checkAnswer() {
+            const currentProblemData = allGameProblems[currentProblemIndex];
+            const solution = currentProblemData.solution;
+            const userInput = getUserInput();
+            let allCorrect = true;
+            let correctCellsThisProblem = 0; // Cells correct for the current problem
+
+            const singlePartial = problemsToSolve[currentProblemIndex].num1Digits === 1 || problemsToSolve[currentProblemIndex].num2Digits === 1;
+
+            if (singlePartial) {
+                const correctFinalAnswer = solution.finalAnswer.replace(',', '');
+                const userFinalAnswer = userInput.finalAnswer;
+                for (let i = 0; i < correctFinalAnswer.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) {
+                        const isDigitCorrect = userFinalAnswer[i] === correctFinalAnswer[i];
+                        input.classList.toggle('correct', isDigitCorrect);
+                        input.classList.toggle('incorrect', !isDigitCorrect);
+                        if (isDigitCorrect) correctCellsThisProblem++;
+                        if (!isDigitCorrect) allCorrect = false;
+                        input.disabled = true; // Disable input after check
+                    }
+                }
+            } else {
+                solution.partialProducts.forEach((correctPP, i) => {
+                    const userPP = userInput.partialProducts[i];
+                    for (let j = 0; j < correctPP.length; j++) {
+                        const input = document.getElementById(`pp-${i}-${j}`);
+                        if (input) {
+                            const isDigitCorrect = userPP[j] === correctPP[j];
+                            input.classList.toggle('correct', isDigitCorrect);
+                            input.classList.toggle('incorrect', !isDigitCorrect);
+                            if (isDigitCorrect) correctCellsThisProblem++;
+                            if (!isDigitCorrect) allCorrect = false;
+                            input.disabled = true;
+                        }
+                    }
+                });
+                const correctFinalAnswer = solution.finalAnswer.replace(',', '');
+                const userFinalAnswer = userInput.finalAnswer;
+                for (let i = 0; i < correctFinalAnswer.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) {
+                        const isDigitCorrect = userFinalAnswer[i] === correctFinalAnswer[i];
+                        input.classList.toggle('correct', isDigitCorrect);
+                        input.classList.toggle('incorrect', !isDigitCorrect);
+                        if (isDigitCorrect) correctCellsThisProblem++;
+                        if (!isDigitCorrect) allCorrect = false;
+                        input.disabled = true;
+                    }
+                }
+            }
+
+            totalCorrectCells += correctCellsThisProblem; // Add to overall total
+            allGameProblems[currentProblemIndex].userInput = userInput; // Store user's input for report
+            allGameProblems[currentProblemIndex].correctCellsThisProblem = correctCellsThisProblem; // Store correct cells for this problem
+
+            const currentPercentage = totalPossibleCells > 0 ? Math.round((totalCorrectCells / totalPossibleCells) * 100) : 0;
+            currentScoreDisplay.textContent = `${currentPercentage}%`;
+
+            if (allCorrect) {
+                showMessage('Άριστα! Όλα είναι σωστά.', 'success');
+            } else {
+                showMessage('Κάποια σημεία είναι λάθος. Δείτε τα κόκκινα πλαίσια.', 'error');
+            }
+
+            checkAnswerBtn.classList.add('hidden');
+            nextProblemBtn.classList.remove('hidden');
+        }
+
+        function nextProblem() {
+            currentProblemIndex++;
+            if (currentProblemIndex < problemsToSolve.length) {
+                setupGameProblem();
+                checkAnswerBtn.classList.remove('hidden');
+                nextProblemBtn.classList.add('hidden');
+            } else {
+                finishGame();
+            }
+        }
+
+        function finishGame() {
+            problemContainer.innerHTML = ''; // Clear problem area
+            checkAnswerBtn.classList.add('hidden');
+            nextProblemBtn.classList.add('hidden');
+            
+            const finalScore = totalPossibleCells > 0 ? Math.round((totalCorrectCells / totalPossibleCells) * 100) : 0;
+            
+            let messageText = `Τέλος παιχνιδιού! Το τελικό σου σκορ είναι ${finalScore}%.`;
+            if (finalScore > getHighscore()) {
+                messageText += '<br><span class="text-2xl font-bold">Νέο High Score!</span>';
+                updateHighscore(finalScore);
+            }
+
+            showMessage(messageText, 'success');
+
+            // Generate the detailed report content
+            let reportHtml = '<h2 class="text-xl font-bold mt-4 mb-2 text-gray-900">Αναλυτική Αναφορά Ασκήσεων</h2>';
+            allGameProblems.forEach((problemData, index) => {
+                reportHtml += `<div class="mb-6 p-4 border border-gray-200 rounded-lg bg-white shadow-sm">`;
+                reportHtml += `<h3 class="text-lg font-semibold text-gray-800 mb-2">Άσκηση ${index + 1}: ${problemData.n1} × ${problemData.n2}</h3>`;
+                reportHtml += `<p class="text-gray-700">Σωστά Κελιά: ${problemData.correctCellsThisProblem} / ${problemData.totalCellsThisProblem}</p>`;
+                
+                // Start a <pre> block for the formatted problem
+                reportHtml += `<pre class="bg-gray-50 p-3 rounded-md mt-2 text-xs overflow-x-auto">`;
+                
+                // Calculate overall display width for alignment within this specific problem's pre tag
+                let overallDisplayWidth = problemData.solution.finalAnswer.replace(',', '').length;
+                problemData.solution.partialProducts.forEach((pp, i) => {
+                    overallDisplayWidth = Math.max(overallDisplayWidth, pp.length + i);
+                });
+                overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n1.replace(',', '').length);
+                overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n2.replace(',', '').length);
+                
+                // Ensure a minimum width for readability, e.g., 10 characters
+                overallDisplayWidth = Math.max(overallDisplayWidth, 10); 
+
+                // Display problem setup with alignment
+                reportHtml += `${problemData.n1.padStart(overallDisplayWidth, ' ')}\n`;
+                reportHtml += `x${problemData.n2.padStart(overallDisplayWidth - 1, ' ')}\n`; // -1 for the 'x'
+                reportHtml += `-`.repeat(overallDisplayWidth + 1) + `\n`; // +1 for the 'x' space or just align to overallDisplayWidth
+                
+                const solution = problemData.solution;
+                const userInput = problemData.userInput;
+                const singlePartial = problemsToSolve[index].num1Digits === 1 || problemsToSolve[index].num2Digits === 1;
+
+                if (singlePartial) {
+                    // Correct Final Answer
+                    reportHtml += `Σωστή Απάντηση: ${solution.finalAnswer.padStart(overallDisplayWidth, ' ')}\n`;
+                    // User's Final Answer
+                    reportHtml += `Δική σου Απάντηση: ${userInput.finalAnswer.replace(/ /g, '_').padStart(overallDisplayWidth, ' ')}\n`;
+                } else {
+                    // Correct Partial Products
+                    reportHtml += `Σωστά Ενδιάμεσα Γινόμενα:\n`;
+                    solution.partialProducts.forEach((pp, i) => {
+                        const padding = overallDisplayWidth - pp.length - i;
+                        reportHtml += `${' '.repeat(Math.max(0, padding))}${pp}\n`;
+                    });
+                    reportHtml += `\n`; // Spacer
+
+                    // User's Partial Products
+                    reportHtml += `Δικά σου Ενδιάμεσα Γινόμενα:\n`;
+                    userInput.partialProducts.forEach((userPp, i) => {
+                        const padding = overallDisplayWidth - userPp.length - i;
+                        reportHtml += `${' '.repeat(Math.max(0, padding))}${userPp.replace(/ /g, '_')}\n`;
+                    });
+                    reportHtml += `\n`; // Spacer
+
+                    // Correct Final Answer
+                    reportHtml += `Σωστή Τελική Απάντηση: ${solution.finalAnswer.padStart(overallDisplayWidth, ' ')}\n`;
+                    // User's Final Answer
+                    reportHtml += `Δική σου Τελική Απάντηση: ${userInput.finalAnswer.replace(/ /g, '_').padStart(overallDisplayWidth, ' ')}\n`;
+                }
+                reportHtml += `</pre>`; // End of <pre> block
+                reportHtml += `</div>`; // End of problem div
+            });
+
+            // Append the copy button after all problem divs
+            reportHtml += `<button id="copyReportBtn" class="mt-4 bg-blue-500 text-white font-bold px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm shadow-md">Αντιγραφή Αναφοράς</button>`;
+
+            detailedSolutionEl.innerHTML = reportHtml;
+            // The mt-8 class is now directly on the detailedSolutionEl in the HTML
+            detailedSolutionEl.classList.remove('hidden'); // Show the report
+
+            // Add event listener for copy button
+            const copyReportBtn = document.getElementById('copyReportBtn');
+            if (copyReportBtn) {
+                copyReportBtn.addEventListener('click', () => {
+                    // Get the final score
+                    const finalScore = totalPossibleCells > 0 ? Math.round((totalCorrectCells / totalPossibleCells) * 100) : 0;
+                    
+                    // Start the plain text report with the overall score
+                    let plainTextReport = `Συνολικό Σκορ: ${finalScore}%\n\n`;
+
+                    allGameProblems.forEach((problemData, index) => {
+                        plainTextReport += `Άσκηση ${index + 1}: ${problemData.n1} × ${problemData.n2}\n`;
+                        plainTextReport += `Σωστά Κελιά: ${problemData.correctCellsThisProblem} / ${problemData.totalCellsThisProblem}\n`;
+                        
+                        // Reconstruct the formatted problem for plain text copying
+                        let overallDisplayWidth = problemData.solution.finalAnswer.replace(',', '').length;
+                        problemData.solution.partialProducts.forEach((pp, i) => {
+                            overallDisplayWidth = Math.max(overallDisplayWidth, pp.length + i);
+                        });
+                        overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n1.replace(',', '').length);
+                        overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n2.replace(',', '').length);
+                        overallDisplayWidth = Math.max(overallDisplayWidth, 10); 
+
+                        plainTextReport += `${problemData.n1.padStart(overallDisplayWidth, ' ')}\n`;
+                        plainTextReport += `x${problemData.n2.padStart(overallDisplayWidth - 1, ' ')}\n`;
+                        plainTextReport += `-`.repeat(overallDisplayWidth + 1) + `\n`;
+                        
+                        const solution = problemData.solution;
+                        const userInput = problemData.userInput;
+                        const singlePartial = problemsToSolve[index].num1Digits === 1 || problemsToSolve[index].num2Digits === 1;
+
+                        if (singlePartial) {
+                            plainTextReport += `Σωστή Απάντηση: ${solution.finalAnswer.padStart(overallDisplayWidth, ' ')}\n`;
+                            plainTextReport += `Δική σου Απάντηση: ${userInput.finalAnswer.replace(/ /g, '_').padStart(overallDisplayWidth, ' ')}\n`;
+                        } else {
+                            plainTextReport += `Σωστά Ενδιάμεσα Γινόμενα:\n`;
+                            solution.partialProducts.forEach((pp, i) => {
+                                const padding = overallDisplayWidth - pp.length - i;
+                                plainTextReport += `${' '.repeat(Math.max(0, padding))}${pp}\n`;
+                            });
+                            plainTextReport += `\n`;
+
+                            plainTextReport += `Δικά σου Ενδιάμεσα Γινόμενα:\n`;
+                            userInput.partialProducts.forEach((userPp, i) => {
+                                const padding = overallDisplayWidth - userPp.length - i;
+                                plainTextReport += `${' '.repeat(Math.max(0, padding))}${userPp.replace(/ /g, '_')}\n`;
+                            });
+                            plainTextReport += `\n`;
+
+                            plainTextReport += `Σωστή Τελική Απάντηση: ${solution.finalAnswer.padStart(overallDisplayWidth, ' ')}\n`;
+                            plainTextReport += `Δική σου Τελική Απάντηση: ${userInput.finalAnswer.replace(/ /g, '_').padStart(overallDisplayWidth, ' ')}\n`;
+                        }
+                        plainTextReport += `\n\n`; // Add extra newlines between problems in the copied text
+                    });
+
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = plainTextReport;
+                    document.body.appendChild(tempTextArea);
+                    tempTextArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempTextArea);
+                    
+                    // Provide feedback
+                    const originalButtonText = copyReportBtn.textContent;
+                    copyReportBtn.textContent = 'Αντιγράφηκε!';
+                    setTimeout(() => {
+                        copyReportBtn.textContent = originalButtonText;
+                    }, 2000);
+                });
+            }
+        }
+
+        // Modified restartGame to call initializeGame
+        function restartGame() {
+            initializeGame();
+        }
+
+        // --- Event Listeners ---
+        checkAnswerBtn.addEventListener('click', checkAnswer);
+        nextProblemBtn.addEventListener('click', nextProblem);
+        restartGameBtn.addEventListener('click', restartGame);
+
+        // --- Initial Setup on Page Load ---
+        window.addEventListener('DOMContentLoaded', () => {
+            highScoreDisplay.textContent = `${getHighscore()}%`;
+            initializeGame(); // Call initializeGame to set up everything
+        });
+    </script>
+</body>
+</html>

@@ -144,7 +144,7 @@
             </div>
 
             <!-- Multiplication Problem Area -->
-            <div id="problemContainer" class="flex justify-center my-4 min-h-[200px]" aria-live="polite" aria-atomic="true">
+            <div id="problemContainer" class="flex flex-grow justify-center items-center my-4 min-h-[200px]" aria-live="polite" aria-atomic="true">
                 <!-- Dynamic content will be inserted here -->
             </div>
 
@@ -152,6 +152,8 @@
             <div id="actionButtons" class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10 hidden">
              <button id="checkAnswer" class="w-full sm:w-auto bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors text-lg shadow-md" aria-label="Έλεγχος Απάντησης">Έλεγχος Απάντησης</button>
              <button id="showSolution" class="w-full sm:w-auto bg-yellow-500 text-white font-semibold px-6 py-2 rounded-lg hover:bg-yellow-600 transition-colors" aria-label="Εμφάνιση Λύσης">Εμφάνιση Λύσης</button>
+             <!-- Game Mode Button - Moved here to navigate to game_mode.html -->
+             <a href="game_mode.html" class="w-full sm:w-auto bg-purple-600 text-white font-semibold px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors text-center shadow" aria-label="Λειτουργία Παιχνιδιού">Game Mode</a>
          </div>
 
          <!-- Message Area -->
@@ -300,6 +302,7 @@
                 if (char !== ',') {
                     html += `<span id="n2-digit-${digitIndex++}">${char}</span>`;
                 }
+                
             }
 
             // Line
@@ -334,7 +337,7 @@
                 html += `<div class="problem-line"></div>`;
                 html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
                 for (let i = 0; i < finalAnswerNoComma.length; i++) {
-                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="${multiplierStr.replace(',','').length + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="${multiplierStr.replace(',','')}.length + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
                 }
             }
 
