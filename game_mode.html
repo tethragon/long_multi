@@ -6,8 +6,12 @@
     <title>Πολλαπλασιασμός - Game Mode</title>
     <!--
             Αυτή η διαδραστική άσκηση πολλαπλασιασμού δημιουργήθηκε από: Γιώργος Πετράκης
-            Έκδοση: 9.0
+            Έκδοση: 10.0
             Ημερομηνία: 12 Ιουλίου 2025
+            
+            Σε αυτή την εκδοχή φτιάχτηκαν τα κενά μεταξύ των κελιών και τροποποιήθηκε ο κώδικας ώστε στο geme mode σε
+            κινητές συσκευές να τυπώνονται τα στατιστικά του παιχνιδιού το ένα κάτω από το άλλο για να μην αλλάζουν οι 
+            χαρακτήρες γραμμή σε μικρές οθόνες. Σε μεγάλη οθόνη η λειτουργικότητα δεν πειράχτηκε
     -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -26,6 +30,10 @@
             line-height: 2rem;
             direction: ltr;
             position: relative;
+            /* Προστέθηκε: Ορίζει το οριζόντιο κενό μεταξύ των στηλών του grid */
+            column-gap: 0.1rem; /* Δοκιμάστε τιμές όπως 0.1rem, 0.2rem, κ.λπ. για να βρείτε το ιδανικό κενό */
+            /* Προστέθηκε: Ορίζει το κάθετο κενό μεταξύ των γραμμών του grid */
+            row-gap: 0.2rem; /* Δοκιμάστε τιμές όπως 0.1rem, 0.2rem, 0.3rem, κ.λπ. για να βρείτε το ιδανικό κάθετο κενό */
         }
         .problem-grid input {
             width: 1.5rem;
@@ -37,7 +45,9 @@
             caret-color: auto;
             font-size: 1.5rem;
             padding: 0;
-            margin: 0 1px;
+            /* Εδώ μπορείτε να πειράξετε την τιμή του margin για να ρυθμίσετε τη στοίχιση.
+               Δοκιμάστε 0px ή αρνητικές τιμές (π.χ., -1px, -2px) για να μετακινήσετε αριστερά. */
+            margin: 0 -3px;  /* Αρχική τιμή, δοκιμάστε να την αλλάξετε σε 0 ή 0 -1px */
         }
         .problem-grid input:focus {
             outline: 2px solid #3b82f6;
@@ -113,10 +123,11 @@
             </header>
 
             <!-- Game Stats Area -->
-            <div class="flex justify-between items-center mb-6 text-lg font-semibold text-gray-700">
-                <p>Πρόβλημα: <span id="currentProblemDisplay">1 / 5</span></p>
-                <p>Σκορ: <span id="currentScoreDisplay">0%</span></p>
-                <p>High Score: <span id="highScoreDisplay">0%</span></p>
+            <!-- Updated classes for responsive layout: flex-col on small screens, flex-row on medium/large -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-6 text-gray-700">
+                <p class="text-sm sm:text-lg font-semibold">Πρόβλημα: <span id="currentProblemDisplay">1 / 5</span></p>
+                <p class="text-sm sm:text-lg font-semibold">Σκορ: <span id="currentScoreDisplay">0%</span></p>
+                <p class="text-sm sm:text-lg font-semibold">High Score: <span id="highScoreDisplay">0%</span></p>
             </div>
             
             <!-- Multiplication Problem Area -->
