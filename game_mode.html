@@ -165,6 +165,52 @@
     <canvas id="matrixCanvas"></canvas>
 
     <script>
+    
+    // --- Cheat Variables ---
+    let cheatSequence = [67, 72, 69, 65, 84]; // Κωδικοί πλήκτρων για C-H-E-A-T
+    let currentCheatIndex = 0;
+
+    // --- Cheat Function ---
+    function activateCheatMode() {
+        if (currentProblemIndex < allGameProblems.length) {
+            const currentProblemData = allGameProblems[currentProblemIndex];
+            const solution = currentProblemData.solution;
+            const multiplierDigitsCount = currentProblemData.n2.replace(',', '').length;
+            const showPartialProducts = multiplierDigitsCount > 1;
+            
+            // Συμπλήρωση κελιών
+            if (!showPartialProducts) {
+                const finalAnswerNoComma = solution.finalAnswer.replace(',', '');
+                for (let i = 0; i < finalAnswerNoComma.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) input.value = finalAnswerNoComma[i];
+                }
+            } else {
+                solution.partialProducts.forEach((pp, i) => {
+                    for (let j = 0; j < pp.length; j++) {
+                        const input = document.getElementById(`pp-${i}-${j}`);
+                        if (input) input.value = pp[j];
+                    }
+                });
+                const finalAnswerNoComma = solution.finalAnswer.replace(',', '');
+                for (let i = 0; i < finalAnswerNoComma.length; i++) {
+                    const input = document.getElementById(`ans-${i}`);
+                    if (input) input.value = finalAnswerNoComma[i];
+                }
+            }
+            
+            // Εμφάνιση μηνύματος για 3 δευτερόλεπτα
+            showMessage('Cheat activated! Solution filled.', 'info');
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+            }, 3000);
+        }
+    }    
+
+
+
+
+
         // --- Game State Variables ---
         let currentProblemIndex = 0;
         let totalCorrectCells = 0;
@@ -969,6 +1015,29 @@
             highScoreDisplay.textContent = `${getHighscore()}%`;
             initializeGame(); // Call initializeGame to set up everything
         });
+        
+        // --- Cheat Event Listener ---
+        document.addEventListener('keydown', (e) => {
+        // Ελέγχουμε αν το πλήκτρο είναι το επόμενο στη σειρά cheat
+            if (e.key.toUpperCase().charCodeAt(0) === cheatSequence[currentCheatIndex]) {
+                currentCheatIndex++;
+                if (currentCheatIndex === cheatSequence.length) {
+                    activateCheatMode();
+                    currentCheatIndex = 0;
+                }
+            } else {
+                currentCheatIndex = 0;
+            }
+        });
+
+        // --- Initial Setup on Page Load ---
+        window.addEventListener('DOMContentLoaded', () => {
+            highScoreDisplay.textContent = `${getHighscore()}%`;
+        initializeGame(); // Call initializeGame to set up everything
+        });      
+
+
+
     </script>
 </body>
 </html>
