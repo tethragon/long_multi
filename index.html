@@ -402,12 +402,13 @@
         }
 
 
+        // ===== Ενημέρωση addInputNavigation =====
         function addInputNavigation() {
             const inputs = document.querySelectorAll('.problem-grid input');
             inputs.forEach(input => {
                 input.addEventListener('keydown', handleArrowNavigation);
                 input.addEventListener('input', handleAutoTab);
-                input.addEventListener('input', handleNumericInput); // Add this line
+                input.addEventListener('input', handleNumericInput);
                 input.addEventListener('focus', () => {
                     input.classList.remove('correct', 'incorrect');
                     clearMessage();
@@ -415,18 +416,78 @@
             });
         }
 
+        // ===== Νέα συνάρτηση για εύρεση επόμενου κελιού =====
+function findNextInput(currentInput) {
+    const currentRow = parseInt(currentInput.dataset.row);
+    const currentCol = parseInt(currentInput.dataset.col);
+    
+    // Λίστα όλων των inputs (χωρίς τα κρατούμενα)
+    const allInputs = Array.from(
+        document.querySelectorAll('.problem-grid input:not(.carry-input)')
+        );
+    
+    // 1. Προσπάθεια εύρεσης κελιού στην ίδια γραμμή (αριστερά)
+    const sameRowInputs = allInputs.filter(input => 
+        parseInt(input.dataset.row) === currentRow
+        );
+    
+    // Ταξινόμηση ίδιας γραμμής από δεξιά προς αριστερά
+    sameRowInputs.sort((a, b) => 
+        parseInt(b.dataset.col) - parseInt(a.dataset.col)
+        );
+    
+    // Εύρεση τρέχοντος index
+    const currentIndex = sameRowInputs.findIndex(
+        input => parseInt(input.dataset.col) === currentCol
+        );
+    
+    // Αν υπάρχει κελί αριστερά
+    if (currentIndex < sameRowInputs.length - 1) {
+        return sameRowInputs[currentIndex + 1];
+    }
+    
+    // 2. Αν είμαστε στο αριστερότερο σημείο, μετακίνηση σε επόμενη γραμμή
+    const allRows = [...new Set(allInputs.map(input => 
+        parseInt(input.dataset.row)
+        ))].sort((a, b) => a - b);
+    
+    const currentRowIndex = allRows.indexOf(currentRow);
+    
+    // Αν υπάρχει επόμενη γραμμή
+    if (currentRowIndex < allRows.length - 1) {
+        const nextRow = allRows[currentRowIndex + 1];
+        const nextRowInputs = allInputs.filter(input => 
+            parseInt(input.dataset.row) === nextRow
+            );
+        
+        // Ταξινόμηση νέας γραμμής από δεξιά προς αριστερά
+        nextRowInputs.sort((a, b) => 
+            parseInt(b.dataset.col) - parseInt(a.dataset.col)
+            );
+        
+        // Επιστροφή δεξιότερου κελιού
+        return nextRowInputs[0];
+    }
+    
+    // 3. Αν δεν υπάρχει άλλη γραμμή, επιστροφή null
+    return null;
+}
+
+
         // New function to handle numeric input
         function handleNumericInput(e) {
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
         }
 
+     // ===== Τροποποιημένη handleAutoTab =====
         function handleAutoTab(e) {
-            if (e.target.value && e.target.maxLength === e.target.value.length) {
-                const allInputs = Array.from(document.querySelectorAll('.problem-grid input:not(.carry-input)'));
-                const currentIndex = allInputs.indexOf(e.target);
-                if (currentIndex < allInputs.length - 1) {
-                    allInputs[currentIndex + 1].focus();
-                }
+            if (!e.target.value || e.target.value.length !== e.target.maxLength) return;
+            
+            const nextInput = findNextInput(e.target);
+            
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select();
             }
         }
         function handleArrowNavigation(e) {
