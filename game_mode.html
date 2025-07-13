@@ -91,6 +91,17 @@
             pointer-events: none;
             text-align: right;
         }
+        /* Styles for the Matrix effect canvas */
+        #matrixCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index: 1000; /* Ensure it's on top */
+            display: none; /* Hidden by default */
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen">
@@ -117,7 +128,7 @@
             <div id="actionButtons" class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
                 <button id="checkAnswer" class="w-full sm:w-auto bg-green-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-green-700 transition-colors text-lg shadow-md" aria-label="Έλεγχος Απάντησης">Έλεγχος Απάντησης</button>
                 <button id="nextProblem" class="w-full sm:w-auto bg-blue-600 text-white font-bold px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors text-lg shadow-md hidden" aria-label="Επόμενη Άσκηση">Επόμενη Άσκηση</button>
-                <a href="index.html" class="w-full sm:w-auto bg-gray-200 text-gray-800 font-semibold px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-center" aria-label="Επιστροφή στην Αρχική Σελίδα">Επιστροφή</a>
+                <a href="long_multi_11.html" class="w-full sm:w-auto bg-gray-200 text-gray-800 font-semibold px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors text-center" aria-label="Επιστροφή στην Αρχική Σελίδα">Επιστροφή</a>
                 <!-- Restart Game Button -->
                 <button id="restartGame" class="bg-yellow-500 text-white p-2 rounded-lg hover:bg-yellow-600 transition-colors shadow-md" aria-label="Επανεκκίνηση Παιχνιδιού">
                     <!-- Classic circular arrow icon (Redo/Refresh) -->
@@ -131,7 +142,6 @@
             <!-- Message Area -->
             <div id="message" class="text-center mt-6 text-lg font-medium h-8" role="alert" aria-live="assertive"></div>
             <!-- Detailed Solution Area -->
-            <!-- Increased mt-4 to mt-8 for more spacing -->
             <div id="detailedSolution" class="whitespace-pre-wrap mt-8 p-4 bg-gray-100 rounded-lg text-sm text-gray-800 hidden"></div>
         </div>
 
@@ -139,6 +149,9 @@
             <p>Πλοηγηθείτε στα πεδία εισαγωγής με τα βελάκια ή κάνοντας κλικ.</p>
         </footer>
     </div>
+
+    <!-- Matrix Effect Canvas -->
+    <canvas id="matrixCanvas"></canvas>
 
     <script>
         // --- Game State Variables ---
@@ -173,6 +186,15 @@
         const currentScoreDisplay = document.getElementById('currentScoreDisplay');
         const highScoreDisplay = document.getElementById('highScoreDisplay');
         const detailedSolutionEl = document.getElementById('detailedSolution'); // Get the detailed solution element
+        const matrixCanvas = document.getElementById('matrixCanvas');
+        const matrixCtx = matrixCanvas.getContext('2d');
+
+        // Matrix effect variables
+        let matrixAnimationId;
+        const fontSize = 16;
+        let columns;
+        let drops = [];
+        const characters = '0123456789ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩabcdefghijklmnopqrstuvwxyz'; // Numbers and Greek letters
 
         // --- Helper Functions (copied and adapted from original) ---
         function getHighscore() {
@@ -259,13 +281,14 @@
         function countExpectedCells(n1Str, n2Str, solution) {
             const multiplicandDigitsCount = n1Str.replace(',', '').length;
             const multiplierDigitsCount = n2Str.replace(',', '').length;
-            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+            // A problem has partial products if the multiplier has more than 1 digit
+            const hasPartialProducts = multiplierDigitsCount > 1;
 
             const finalAnswerNoComma = solution.finalAnswer.replace(',', '');
             
-            if (singlePartial) {
+            if (!hasPartialProducts) { // If no partial products, only count final answer cells
                 return finalAnswerNoComma.length;
-            } else {
+            } else { // If partial products, count them and final answer cells
                 return solution.partialProducts.reduce((acc, pp) => acc + pp.length, 0) + finalAnswerNoComma.length;
             }
         }
@@ -303,6 +326,9 @@
             nextProblemBtn.classList.add('hidden');
             detailedSolutionEl.classList.add('hidden'); // Hide report on new game
             
+            // Stop Matrix effect if running
+            stopMatrixEffect();
+
             // Start the first problem
             setupGameProblem();
         }
@@ -333,7 +359,8 @@
         function renderProblemGrid(n1, n2, solution) {
             const multiplicandDigitsCount = n1.replace(',', '').length;
             const multiplierDigitsCount = n2.replace(',', '').length;
-            const singlePartial = multiplicandDigitsCount === 1 || multiplierDigitsCount === 1;
+            // Determine if partial products should be shown based on multiplier's digit count
+            const showPartialProducts = multiplierDigitsCount > 1;
 
             const multiplicandWidth = n1.replace(',', '').length;
             const multiplierWidth = n2.replace(',', '').length + 2;
@@ -343,7 +370,8 @@
             const gridWidth = Math.max(
                 multiplicandWidth,
                 multiplierWidth,
-                ...partialProductsWidths,
+                // Only consider partial product widths if they are actually shown
+                ...(showPartialProducts ? partialProductsWidths : []), 
                 finalAnswerWidth
             ) + 1;
 
@@ -372,20 +400,23 @@
                 if (char !== ',') {
                     html += `<span id="n2-digit-${digitIndex++}">${char}</span>`;
                 }
+                
             }
 
             // Line
             html += `<div class="problem-line"></div>`;
 
-            const finalAnswerNoComma = solution.finalAnswer.replace(',', '');
+            const finalAnswerWithComma = solution.finalAnswer;
+            const finalAnswerNoComma = finalAnswerWithComma.replace(',', '');
+            const totalDecimalPlaces = solution.totalDecimalPlaces;
 
-            if (singlePartial) {
+            if (!showPartialProducts) { // If multiplier is single digit, only show final answer
                 // Only final answer
                 html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
                 for (let i = 0; i < finalAnswerNoComma.length; i++) {
                     html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="1" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
                 }
-            } else {
+            } else { // If multiplier is multi-digit, show partial products and then final answer
                 // Partial products
                 solution.partialProducts.forEach((pp, i) => {
                     if (i === solution.partialProducts.length - 1) {
@@ -404,7 +435,7 @@
                 html += `<div class="problem-line"></div>`;
                 html += `<div class="empty"></div>`.repeat(gridWidth - finalAnswerNoComma.length);
                 for (let i = 0; i < finalAnswerNoComma.length; i++) {
-                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="${multiplierStr.replace(',','')}.length + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
+                    html += `<input type="text" inputmode="numeric" id="ans-${i}" maxlength="1" data-row="${multiplierDigitsCount + 1}" data-col="${i}" aria-label="Τελική απάντηση θέση ${i + 1}">`;
                 }
             }
 
@@ -506,14 +537,16 @@
             }
         }
         function getUserInput() {
-            const solution = allGameProblems[currentProblemIndex].solution; // Get solution from stored data
+            const currentProblemData = allGameProblems[currentProblemIndex];
+            const solution = currentProblemData.solution; // Get solution from stored data
             const userInput = {
                 partialProducts: [],
                 finalAnswer: ''
             };
-            const singlePartial = problemsToSolve[currentProblemIndex].num1Digits === 1 || problemsToSolve[currentProblemIndex].num2Digits === 1;
+            const multiplierDigitsCount = currentProblemData.n2.replace(',', '').length;
+            const showPartialProducts = multiplierDigitsCount > 1;
 
-            if (singlePartial) {
+            if (!showPartialProducts) { // If no partial products, only final answer is collected
                 const finalAnswerDigits = solution.finalAnswer.replace(',', '').length;
                 let ansString = '';
                 for (let i = 0; i < finalAnswerDigits; i++) {
@@ -521,7 +554,7 @@
                     if (input) ansString += input.value || ' ';
                 }
                 userInput.finalAnswer = ansString;
-            } else {
+            } else { // If partial products, collect them and final answer
                 solution.partialProducts.forEach((pp, i) => {
                     let ppString = '';
                     for (let j = 0; j < pp.length; j++) {
@@ -548,9 +581,10 @@
             let allCorrect = true;
             let correctCellsThisProblem = 0; // Cells correct for the current problem
 
-            const singlePartial = problemsToSolve[currentProblemIndex].num1Digits === 1 || problemsToSolve[currentProblemIndex].num2Digits === 1;
+            const multiplierDigitsCount = currentProblemData.n2.replace(',', '').length;
+            const showPartialProducts = multiplierDigitsCount > 1;
 
-            if (singlePartial) {
+            if (!showPartialProducts) { // If multiplier is single digit, only check final answer
                 const correctFinalAnswer = solution.finalAnswer.replace(',', '');
                 const userFinalAnswer = userInput.finalAnswer;
                 for (let i = 0; i < correctFinalAnswer.length; i++) {
@@ -564,7 +598,7 @@
                         input.disabled = true; // Disable input after check
                     }
                 }
-            } else {
+            } else { // If multiplier is multi-digit, check partial products and final answer
                 solution.partialProducts.forEach((correctPP, i) => {
                     const userPP = userInput.partialProducts[i];
                     for (let j = 0; j < correctPP.length; j++) {
@@ -637,6 +671,11 @@
 
             showMessage(messageText, 'success');
 
+            // Trigger Matrix effect if 100% score
+            if (finalScore === 100) {
+                startMatrixEffect();
+            }
+
             // Generate the detailed report content
             let reportHtml = '<h2 class="text-xl font-bold mt-4 mb-2 text-gray-900">Αναλυτική Αναφορά Ασκήσεων</h2>';
             allGameProblems.forEach((problemData, index) => {
@@ -649,9 +688,14 @@
                 
                 // Calculate overall display width for alignment within this specific problem's pre tag
                 let overallDisplayWidth = problemData.solution.finalAnswer.replace(',', '').length;
-                problemData.solution.partialProducts.forEach((pp, i) => {
-                    overallDisplayWidth = Math.max(overallDisplayWidth, pp.length + i);
-                });
+                const multiplierDigitsCount = problemData.n2.replace(',', '').length;
+                const showPartialProductsInReport = multiplierDigitsCount > 1;
+
+                if (showPartialProductsInReport) {
+                    problemData.solution.partialProducts.forEach((pp, i) => {
+                        overallDisplayWidth = Math.max(overallDisplayWidth, pp.length + i);
+                    });
+                }
                 overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n1.replace(',', '').length);
                 overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n2.replace(',', '').length);
                 
@@ -665,14 +709,13 @@
                 
                 const solution = problemData.solution;
                 const userInput = problemData.userInput;
-                const singlePartial = problemsToSolve[index].num1Digits === 1 || problemsToSolve[index].num2Digits === 1;
 
-                if (singlePartial) {
+                if (!showPartialProductsInReport) { // If multiplier is single digit, only show final answer in report
                     // Correct Final Answer
                     reportHtml += `Σωστή Απάντηση: ${solution.finalAnswer.padStart(overallDisplayWidth, ' ')}\n`;
                     // User's Final Answer
                     reportHtml += `Δική σου Απάντηση: ${userInput.finalAnswer.replace(/ /g, '_').padStart(overallDisplayWidth, ' ')}\n`;
-                } else {
+                } else { // If multiplier is multi-digit, show partial products and then final answer in report
                     // Correct Partial Products
                     reportHtml += `Σωστά Ενδιάμεσα Γινόμενα:\n`;
                     solution.partialProducts.forEach((pp, i) => {
@@ -710,10 +753,10 @@
             if (copyReportBtn) {
                 copyReportBtn.addEventListener('click', () => {
                     // Get the final score
-                    const finalScore = totalPossibleCells > 0 ? Math.round((totalCorrectCells / totalPossibleCells) * 100) : 0;
+                    const finalScoreToCopy = totalPossibleCells > 0 ? Math.round((totalCorrectCells / totalPossibleCells) * 100) : 0;
                     
                     // Start the plain text report with the overall score
-                    let plainTextReport = `Συνολικό Σκορ: ${finalScore}%\n\n`;
+                    let plainTextReport = `Συνολικό Σκορ: ${finalScoreToCopy}%\n\n`;
 
                     allGameProblems.forEach((problemData, index) => {
                         plainTextReport += `Άσκηση ${index + 1}: ${problemData.n1} × ${problemData.n2}\n`;
@@ -721,9 +764,14 @@
                         
                         // Reconstruct the formatted problem for plain text copying
                         let overallDisplayWidth = problemData.solution.finalAnswer.replace(',', '').length;
-                        problemData.solution.partialProducts.forEach((pp, i) => {
-                            overallDisplayWidth = Math.max(overallDisplayWidth, pp.length + i);
-                        });
+                        const multiplierDigitsCount = problemData.n2.replace(',', '').length;
+                        const showPartialProductsInReport = multiplierDigitsCount > 1;
+
+                        if (showPartialProductsInReport) {
+                            problemData.solution.partialProducts.forEach((pp, i) => {
+                                overallDisplayWidth = Math.max(overallDisplayWidth, pp.length + i);
+                            });
+                        }
                         overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n1.replace(',', '').length);
                         overallDisplayWidth = Math.max(overallDisplayWidth, problemData.n2.replace(',', '').length);
                         overallDisplayWidth = Math.max(overallDisplayWidth, 10); 
@@ -734,9 +782,8 @@
                         
                         const solution = problemData.solution;
                         const userInput = problemData.userInput;
-                        const singlePartial = problemsToSolve[index].num1Digits === 1 || problemsToSolve[index].num2Digits === 1;
 
-                        if (singlePartial) {
+                        if (!showPartialProductsInReport) {
                             plainTextReport += `Σωστή Απάντηση: ${solution.finalAnswer.padStart(overallDisplayWidth, ' ')}\n`;
                             plainTextReport += `Δική σου Απάντηση: ${userInput.finalAnswer.replace(/ /g, '_').padStart(overallDisplayWidth, ' ')}\n`;
                         } else {
@@ -776,6 +823,64 @@
                 });
             }
         }
+
+        // --- Matrix Effect Functions ---
+        function resizeMatrixCanvas() {
+            matrixCanvas.width = window.innerWidth;
+            matrixCanvas.height = window.innerHeight;
+            columns = matrixCanvas.width / fontSize;
+            drops = [];
+            for (let x = 0; x < columns; x++) {
+                drops[x] = 1; // Start drops at the top
+            }
+        }
+
+        function drawMatrix() {
+            // Semi-transparent black rectangle to create the fading trail effect
+            matrixCtx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            matrixCtx.fillRect(0, 0, matrixCanvas.width, matrixCanvas.height);
+
+            matrixCtx.fillStyle = '#0F0'; // Green text
+            matrixCtx.font = fontSize + 'px monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                // Get a random character
+                const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                // x = i * font_size, y = drops[i] * font_size
+                matrixCtx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                // Sending the drop back to the top randomly after it has crossed the screen
+                // Adding a randomness to the reset to make it look more natural
+                if (drops[i] * fontSize > matrixCanvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+
+                // Incrementing Y coordinate - Adjusted for slower speed
+                drops[i] += 0.5; // Reduced from 1 to 0.5 for slower movement
+            }
+        }
+
+        function startMatrixEffect() {
+            matrixCanvas.style.display = 'block'; // Show the canvas
+            resizeMatrixCanvas(); // Initial resize
+            window.addEventListener('resize', resizeMatrixCanvas); // Resize on window resize
+            // Increased interval for slower animation
+            matrixAnimationId = setInterval(drawMatrix, 66); // Increased from 33ms to 66ms (~15 FPS)
+            
+            // Allow clicking anywhere or pressing any key to stop the effect
+            matrixCanvas.addEventListener('click', stopMatrixEffect, { once: true });
+            window.addEventListener('keydown', stopMatrixEffect, { once: true }); // Add keydown listener
+        }
+
+        function stopMatrixEffect() {
+            clearInterval(matrixAnimationId);
+            window.removeEventListener('resize', resizeMatrixCanvas);
+            matrixCanvas.removeEventListener('click', stopMatrixEffect);
+            window.removeEventListener('keydown', stopMatrixEffect); // Remove keydown listener
+            matrixCanvas.style.display = 'none'; // Hide the canvas
+            matrixCtx.clearRect(0, 0, matrixCanvas.width, matrixCanvas.height); // Clear content
+        }
+
 
         // Modified restartGame to call initializeGame
         function restartGame() {
